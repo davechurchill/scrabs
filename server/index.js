@@ -283,25 +283,6 @@ app.post("/api/join", async (req, res) => {
   }
 });
 
-app.get("/api/game/:code", async (req, res) => {
-  try {
-    const code = sanitizeCode(req.params?.code);
-    const game = await findGameByCode(code);
-
-    if (!game) {
-      throw new GameRuleError("Game code not found.", 404);
-    }
-
-    validateGameShape(game);
-
-    res.json({
-      code,
-      status: game.status
-    });
-  } catch (error) {
-    respondWithError(res, error);
-  }
-});
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
@@ -420,5 +401,6 @@ start().catch((error) => {
   console.error("Failed to start server", error);
   process.exit(1);
 });
+
 
 

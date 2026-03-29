@@ -155,13 +155,13 @@ function fallbackCopyText(text) {
   return copied;
 }
 
-async function copyGameUrlToClipboard(url) {
+async function copyTextToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(text);
     return true;
   }
 
-  return fallbackCopyText(url);
+  return fallbackCopyText(text);
 }
 function isMyActiveTurn(state) {
   return Boolean(state && state.status === "active" && state.turnIndex === state.myIndex);
@@ -335,24 +335,6 @@ function postJson(url, payload) {
   });
 }
 
-function getJson(url) {
-  return fetch(url).then(async (response) => {
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(body.error || "Request failed");
-    }
-    return body;
-  });
-}
-
-function buildGameUrl(code) {
-  const normalizedCode = normalizeCode(code);
-  const shareUrl = new URL(window.location.href);
-  shareUrl.search = "";
-  shareUrl.hash = "";
-  shareUrl.searchParams.set("game", normalizedCode);
-  return shareUrl.toString();
-}
 async function hostGame() {
   const name = normalizeName(nameInput.value);
   if (!name) {
@@ -409,41 +391,6 @@ async function joinGame() {
   }
 }
 
-async function applyGameCodeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const requestedCode = params.get("game");
-  if (requestedCode == null) {
-    return;
-  }
-
-  const code = normalizeCode(requestedCode);
-  joinCodeInput.value = code;
-
-  if (code.length !== 6) {
-    showLobbyError(`Invalid game id: ${requestedCode}`);
-    return;
-  }
-
-  hostBtn.disabled = true;
-  joinBtn.disabled = true;
-
-  try {
-    await getJson(`/api/game/${encodeURIComponent(code)}`);
-  } catch {
-    showLobbyError(`Invalid game id: ${code}`);
-    return;
-  } finally {
-    hostBtn.disabled = false;
-    joinBtn.disabled = false;
-  }
-
-  const hasName = Boolean(normalizeName(nameInput.value));
-  if (hasName) {
-    await joinGame();
-  } else {
-    showLobbyError(`Game ${code} found. Enter your name, then click Join.`);
-  }
-}
 function enterGame(response, name) {
   playerName = name;
   playerKey = response.playerKey;
@@ -459,7 +406,6 @@ function enterGame(response, name) {
   exchangeSelection.clear();
 
   gameCodeLabel.textContent = gameCode;
-  window.history.replaceState({}, "", buildGameUrl(gameCode));
   lobbyCard.classList.add("hidden");
   gameView.classList.remove("hidden");
 
@@ -1122,11 +1068,8 @@ copyCodeBtn.addEventListener("click", async () => {
     setCopyButtonFeedback("No code");
     return;
   }
-
-  const gameUrl = buildGameUrl(gameCode);
-
   try {
-    const copied = await copyGameUrlToClipboard(gameUrl);
+    const copied = await copyTextToClipboard(gameCode);
     setCopyButtonFeedback(copied ? "Copied" : "Copy failed");
   } catch {
     setCopyButtonFeedback("Copy failed");
@@ -1202,22 +1145,5 @@ submitMoveBtn.addEventListener("click", () => {
 setupTurnAlertListeners();
 
 nameInput.value = localStorage.getItem(LAST_NAME_STORAGE_KEY) ?? "";
+joinCodeInput.value = "";
 renderAll();
-applyGameCodeFromUrl().catch(() => {
-  showLobbyError("Could not process game link.");
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
