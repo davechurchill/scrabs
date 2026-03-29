@@ -24,7 +24,7 @@ export class GameRuleError extends Error {
   }
 }
 
-const GAME_CODES = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const GAME_CODES = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 function nowIso() {
   return new Date().toISOString();
