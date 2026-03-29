@@ -21,8 +21,8 @@ import {
 } from "./gameEngine.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
-const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://localhost:27017/scrabble";
-const MONGODB_DB = process.env.MONGODB_DB ?? "scrabble";
+const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://localhost:27017/scrabs";
+const MONGODB_DB = process.env.MONGODB_DB ?? "scrabs";
 const GAME_COLLECTION = "games";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -393,7 +393,7 @@ async function start() {
   await gamesCollection.createIndex({ code: 1 }, { unique: true });
 
   server.listen(PORT, () => {
-    console.log(`Scrabble server listening on port ${PORT}`);
+    console.log(`Scrabs server listening on port ${PORT}`);
   });
 }
 

@@ -1,23 +1,55 @@
+# Compose file: defines a multi-container app stack.
+# Here we run two services together:
+# 1) `app`   -> your Node.js game server/client host
+# 2) `mongo` -> MongoDB database used by the app
 services:
+  # Application service
   app:
+    # Build this service image from the local project.
     build:
+      # Build context is the repository root (current directory).
       context: .
+      # Use this Dockerfile for the build.
       dockerfile: Dockerfile
+
+    # Publish container port 3000 to host port 3000.
+    # host:container => http://localhost:3000 reaches the app.
     ports:
       - "3000:3000"
+
+    # Environment variables injected into the running container.
+    # These override Dockerfile ENV defaults if both are present.
     environment:
+      # Port the Node server binds to inside the container.
       PORT: 3000
-      MONGODB_URI: mongodb://mongo:27017/scrabble
-      MONGODB_DB: scrabble
+      # Connection string pointing to the `mongo` service on the Compose network.
+      # `mongo` works as a DNS hostname automatically provided by Compose.
+      MONGODB_URI: mongodb://mongo:27017/scrabs
+      # Database name inside MongoDB.
+      MONGODB_DB: scrabs
+
+    # Start order hint: ensure `mongo` container starts before `app`.
+    # Note: this does not guarantee Mongo is fully ready to accept connections.
     depends_on:
       - mongo
+
+    # Restart policy for resilience.
+    # Container is restarted unless explicitly stopped by user.
     restart: unless-stopped
 
+  # Database service
   mongo:
+    # Use official MongoDB image (major version 7).
     image: mongo:7
+
+    # Keep DB container running across crashes/reboots (unless manually stopped).
     restart: unless-stopped
+
+    # Persist Mongo data on a named volume so data survives container recreation.
     volumes:
       - mongo_data:/data/db
 
+# Top-level named volumes managed by Docker.
+# `mongo_data` stores MongoDB database files outside the container filesystem.
 volumes:
   mongo_data:

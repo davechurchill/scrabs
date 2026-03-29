@@ -22,10 +22,10 @@ const submitMoveBtn = document.getElementById("submitMoveBtn");
 const shuffleRackBtn = document.getElementById("shuffleRackBtn");
 const exchangeRackBtn = document.getElementById("exchangeRackBtn");
 
-const SESSION_STORAGE_KEY = "scrabble.sessions.v1";
-const LAST_NAME_STORAGE_KEY = "scrabble.last-name";
+const SESSION_STORAGE_KEY = "scrabs.sessions.v1";
+const LAST_NAME_STORAGE_KEY = "scrabs.last-name";
 const DEFAULT_PAGE_TITLE = document.title;
-const TURN_ALERT_TITLE = "Your turn - Scrabble Clone";
+const TURN_ALERT_TITLE = "Your turn - Scrabs Clone";
 const BOARD_ORIGIN_X = 10;
 const BOARD_ORIGIN_Y = 10;
 const BOARD_TILE_SIZE = 40;
