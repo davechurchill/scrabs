@@ -1,6 +1,6 @@
-# Scrabble Clone (Initial Version)
+# Scrabs
 
-Multiplayer Scrabble-style game built with:
+Multiplayer  game built with:
 - HTML/CSS/JavaScript canvas UI
 - Node.js + Express + WebSocket backend
 - MongoDB persistence
@@ -21,31 +21,6 @@ Multiplayer Scrabble-style game built with:
   - Player goes out with empty bag
   - Six consecutive scoreless turns
 
-## Local run (without Docker)
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Run MongoDB (local or remote), then set env vars (PowerShell):
-
-```powershell
-$env:MONGODB_URI="mongodb://localhost:27017/scrabble"
-$env:MONGODB_DB="scrabble"
-```
-
-3. Start the app:
-
-```bash
-npm start
-```
-
-4. Open:
-
-- http://localhost:3000
-
 ## Docker run
 
 Use Docker Compose to run app + MongoDB together:
@@ -60,7 +35,7 @@ Then open:
 ## Project structure
 
 - `server/index.js` - API + WebSocket server + Mongo integration
-- `server/gameEngine.js` - Scrabble game rules and scoring logic
+- `server/gameEngine.js` - Scrabs rules and scoring logic
 - `server/wordDictionary.js` - dictionary loading
 - `shared/Letters.js` - tile values/distribution and bag helpers
 - `shared/Board.js` - board multipliers and board helpers
