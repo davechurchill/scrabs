@@ -1,0 +1,16 @@
+{
+  "name": "scrabble-clone",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongodb": "^6.17.0",
+    "word-list": "^4.1.0",
+    "ws": "^8.18.3"
+  }
+}

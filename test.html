@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scrabs</title>
+    <link rel="stylesheet" href="./public/style.css" />
+    <style>
+      .test-wrapper {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      @media (max-width: 1060px) {
+        .test-wrapper {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="test-wrapper">
+      <div class="game-layout">
+        <canvas id="boardCanvas" width="620" height="708"></canvas>
+        <div class="rack-submit">
+          <button
+            id="shuffleRackBtn"
+            class="rack-icon-btn"
+            type="button"
+            aria-label="Shuffle rack"
+            title="Shuffle rack"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 4h4v4" />
+              <path d="M4 18h2c2.6 0 4.2-.9 5.8-3L20 4" />
+              <path d="M16 20h4v-4" />
+              <path d="M4 6h2c2.6 0 4.2.9 5.8 3L20 20" />
+            </svg>
+          </button>
+          <button
+            id="exchangeRackBtn"
+            class="rack-icon-btn"
+            type="button"
+            aria-label="Exchange mode"
+            title="Exchange mode"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 8h11" />
+              <path d="M13 4l4 4-4 4" />
+              <path d="M19 16H8" />
+              <path d="M11 12l-4 4 4 4" />
+            </svg>
+          </button>
+          <button id="submitMoveBtn" class="primary">Submit Word</button>
+        </div>
+
+        <aside class="side-panel card">
+          <section>
+            <div id="playersList" class="players-list">
+              <div class="player-card me turn">
+                <div class="player-name">You</div>
+                <div class="player-score">42</div>
+                <div class="player-tiles">7 tiles</div>
+                <div class="player-presence online">Online</div>
+              </div>
+              <div class="player-card">
+                <div class="player-name">Opponent</div>
+                <div class="player-score">37</div>
+                <div class="player-tiles">7 tiles</div>
+                <div class="player-presence offline">Offline</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="game-meta">
+            <div class="game-meta-row">
+              <strong>Code:</strong>
+              <span id="gameCodeLabel">TEST01</span>
+              <button id="copyCodeBtn" class="small" type="button">Copy</button>
+            </div>
+            <div class="status-row">
+              <span>Status:</span>
+              <span id="statusLabel" class="status">No server needed</span>
+            </div>
+          </section>
+
+          <section>
+            <h2>History</h2>
+            <div id="historyLog" class="history-log"></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("boardCanvas");
+        const ctx = canvas.getContext("2d");
+        const historyLog = document.getElementById("historyLog");
+        const shuffleRackBtn = document.getElementById("shuffleRackBtn");
+        const exchangeRackBtn = document.getElementById("exchangeRackBtn");
+        const submitMoveBtn = document.getElementById("submitMoveBtn");
+
+        const BOARD_SIZE = 15;
+        const BOARD_ORIGIN_X = 10;
+        const BOARD_ORIGIN_Y = 10;
+        const BOARD_TILE_SIZE = 40;
+        const BOARD_PIXEL_SIZE = BOARD_TILE_SIZE * BOARD_SIZE;
+
+        const RACK_ORIGIN_X = 13;
+        const RACK_ORIGIN_Y = 620;
+        const RACK_SLOT_SIZE = 78;
+        const RACK_SLOT_GAP = 8;
+
+        const MULTIPLIER = Object.freeze({
+          NORMAL: "N",
+          DOUBLE_LETTER: "DL",
+          TRIPLE_LETTER: "TL",
+          DOUBLE_WORD: "DW",
+          TRIPLE_WORD: "TW"
+        });
+
+        const N = MULTIPLIER.NORMAL;
+        const DL = MULTIPLIER.DOUBLE_LETTER;
+        const TL = MULTIPLIER.TRIPLE_LETTER;
+        const DW = MULTIPLIER.DOUBLE_WORD;
+        const TW = MULTIPLIER.TRIPLE_WORD;
+
+        const BOARD_LAYOUT = [
+          [TW, N, N, DL, N, N, N, TW, N, N, N, DL, N, N, TW],
+          [N, DW, N, N, N, TL, N, N, N, TL, N, N, N, DW, N],
+          [N, N, DW, N, N, N, DL, N, DL, N, N, N, DW, N, N],
+          [DL, N, N, DW, N, N, N, DL, N, N, N, DW, N, N, DL],
+          [N, N, N, N, DW, N, N, N, N, N, DW, N, N, N, N],
+          [N, TL, N, N, N, TL, N, N, N, TL, N, N, N, TL, N],
+          [N, N, DL, N, N, N, DL, N, DL, N, N, N, DL, N, N],
+          [TW, N, N, DL, N, N, N, DW, N, N, N, DL, N, N, TW],
+          [N, N, DL, N, N, N, DL, N, DL, N, N, N, DL, N, N],
+          [N, TL, N, N, N, TL, N, N, N, TL, N, N, N, TL, N],
+          [N, N, N, N, DW, N, N, N, N, N, DW, N, N, N, N],
+          [DL, N, N, DW, N, N, N, DL, N, N, N, DW, N, N, DL],
+          [N, N, DW, N, N, N, DL, N, DL, N, N, N, DW, N, N],
+          [N, DW, N, N, N, TL, N, N, N, TL, N, N, N, DW, N],
+          [TW, N, N, DL, N, N, N, TW, N, N, N, DL, N, N, TW]
+        ];
+
+        const MULTIPLIER_COLORS = {
+          [MULTIPLIER.NORMAL]: "#ead9bb",
+          [MULTIPLIER.DOUBLE_LETTER]: "#8fc4f2",
+          [MULTIPLIER.TRIPLE_LETTER]: "#4f89cb",
+          [MULTIPLIER.DOUBLE_WORD]: "#f3adb5",
+          [MULTIPLIER.TRIPLE_WORD]: "#df6657"
+        };
+
+        const LETTER_VALUES = {
+          A: 1,
+          B: 3,
+          C: 3,
+          D: 2,
+          E: 1,
+          F: 4,
+          G: 2,
+          H: 4,
+          I: 1,
+          J: 8,
+          K: 5,
+          L: 1,
+          M: 3,
+          N: 1,
+          O: 1,
+          P: 3,
+          Q: 10,
+          R: 1,
+          S: 1,
+          T: 1,
+          U: 1,
+          V: 4,
+          W: 4,
+          X: 8,
+          Y: 4,
+          Z: 10,
+          "?": 0
+        };
+
+        const words = [
+          { word: "HELLO", x: 5, y: 7, dx: 1, dy: 0 },
+          { word: "SOLAR", x: 7, y: 5, dx: 0, dy: 1 },
+          { word: "QUIZ", x: 10, y: 2, dx: 1, dy: 0 },
+          { word: "JAZZ", x: 2, y: 10, dx: 0, dy: 1 },
+          { word: "VEX", x: 9, y: 11, dx: 1, dy: 0 }
+        ];
+
+        const demoRack = ["R", "T", "N", "E", "A", "?", "S"];
+        let exchangeMode = false;
+        const exchangeSelection = new Set();
+        let hoveredBoardCell = null;
+        let hoveredRackIndex = -1;
+
+        function roundRectPath(x, y, w, h, r) {
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(x, y, w, h, r);
+            return;
+          }
+
+          const radius = Math.min(r, w / 2, h / 2);
+          ctx.moveTo(x + radius, y);
+          ctx.arcTo(x + w, y, x + w, y + h, radius);
+          ctx.arcTo(x + w, y + h, x, y + h, radius);
+          ctx.arcTo(x, y + h, x, y, radius);
+          ctx.arcTo(x, y, x + w, y, radius);
+        }
+
+        function drawTile(x, y, size, tile, options = {}) {
+          const {
+            selected = false,
+            accent = false,
+            tint = "#f6dca9",
+            letterFontSize = 22,
+            pointsFontSize = 9
+          } = options;
+
+          ctx.save();
+          ctx.fillStyle = tint;
+          ctx.strokeStyle = selected ? "#1f6f42" : accent ? "#8a5a0b" : "#8a7556";
+          ctx.lineWidth = selected ? 3 : 2;
+          ctx.beginPath();
+          roundRectPath(x, y, size, size, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#2e261c";
+          ctx.font = "bold " + letterFontSize + "px Trebuchet MS";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(tile.letter === "?" ? "_" : tile.letter, x + size / 2, y + size / 2);
+
+          ctx.font = "bold " + pointsFontSize + "px Trebuchet MS";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(String(tile.points ?? 0), x + size - 4, y + size - 3);
+          ctx.restore();
+        }
+
+        function getCanvasPoint(event) {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+
+          return {
+            x: (event.clientX - rect.left) * scaleX,
+            y: (event.clientY - rect.top) * scaleY
+          };
+        }
+
+        function findBoardCell(pointX, pointY) {
+          const localX = pointX - BOARD_ORIGIN_X;
+          const localY = pointY - BOARD_ORIGIN_Y;
+
+          if (localX < 0 || localY < 0 || localX >= BOARD_PIXEL_SIZE || localY >= BOARD_PIXEL_SIZE) {
+            return null;
+          }
+
+          return {
+            x: Math.floor(localX / BOARD_TILE_SIZE),
+            y: Math.floor(localY / BOARD_TILE_SIZE)
+          };
+        }
+
+        function findRackIndex(pointX, pointY) {
+          const rackYStart = RACK_ORIGIN_Y;
+          const rackYEnd = rackYStart + RACK_SLOT_SIZE;
+
+          if (pointY < rackYStart || pointY > rackYEnd) {
+            return -1;
+          }
+
+          for (let index = 0; index < 7; index += 1) {
+            const x = RACK_ORIGIN_X + index * (RACK_SLOT_SIZE + RACK_SLOT_GAP);
+            if (pointX >= x && pointX <= x + RACK_SLOT_SIZE) {
+              return index;
+            }
+          }
+
+          return -1;
+        }
+
+        function drawHoverGlowRect(x, y, width, height, radius = 0) {
+          ctx.save();
+          ctx.shadowColor = "rgba(255, 235, 170, 0.85)";
+          ctx.shadowBlur = 10;
+          ctx.strokeStyle = "rgba(255, 235, 170, 0.95)";
+          ctx.lineWidth = 2;
+
+          if (radius > 0) {
+            ctx.beginPath();
+            roundRectPath(x, y, width, height, radius);
+            ctx.stroke();
+          } else {
+            ctx.strokeRect(x, y, width, height);
+          }
+
+          ctx.restore();
+        }
+
+        function buildSampleTiles() {
+          const tilesByCell = new Map();
+
+          for (const item of words) {
+            for (let i = 0; i < item.word.length; i += 1) {
+              const letter = item.word[i];
+              const x = item.x + item.dx * i;
+              const y = item.y + item.dy * i;
+              const key = `${x},${y}`;
+
+              if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) {
+                throw new Error(`Word ${item.word} goes out of bounds.`);
+              }
+
+              const existing = tilesByCell.get(key);
+              if (existing && existing.letter !== letter) {
+                throw new Error(`Word overlap conflict at ${key}.`);
+              }
+
+              tilesByCell.set(key, {
+                letter,
+                points: LETTER_VALUES[letter] ?? 0
+              });
+            }
+          }
+
+          return tilesByCell;
+        }
+
+        function drawBoard(sampleTiles) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (let y = 0; y < BOARD_SIZE; y += 1) {
+            for (let x = 0; x < BOARD_SIZE; x += 1) {
+              const cellX = BOARD_ORIGIN_X + x * BOARD_TILE_SIZE;
+              const cellY = BOARD_ORIGIN_Y + y * BOARD_TILE_SIZE;
+              const multiplier = BOARD_LAYOUT[y][x];
+
+              ctx.fillStyle = MULTIPLIER_COLORS[multiplier] ?? MULTIPLIER_COLORS[MULTIPLIER.NORMAL];
+              ctx.fillRect(cellX, cellY, BOARD_TILE_SIZE, BOARD_TILE_SIZE);
+              ctx.strokeStyle = "#a48d6f";
+              ctx.lineWidth = 1;
+              ctx.strokeRect(cellX, cellY, BOARD_TILE_SIZE, BOARD_TILE_SIZE);
+
+              if (x === 7 && y === 7) {
+                ctx.fillStyle = "#724d16";
+                ctx.font = "bold 18px Trebuchet MS";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("*", cellX + BOARD_TILE_SIZE / 2, cellY + BOARD_TILE_SIZE / 2 + 1);
+              } else if (multiplier !== MULTIPLIER.NORMAL) {
+                ctx.fillStyle = "#2b2b2b";
+                ctx.font = "bold 10px Trebuchet MS";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(multiplier, cellX + BOARD_TILE_SIZE / 2, cellY + BOARD_TILE_SIZE / 2);
+              }
+            }
+          }
+
+          for (const [key, tile] of sampleTiles.entries()) {
+            const [x, y] = key.split(",").map(Number);
+            drawTile(
+              BOARD_ORIGIN_X + x * BOARD_TILE_SIZE + 2,
+              BOARD_ORIGIN_Y + y * BOARD_TILE_SIZE + 2,
+              BOARD_TILE_SIZE - 4,
+              tile,
+              {
+                tint: "#efd19b"
+              }
+            );
+          }
+
+          if (hoveredBoardCell) {
+            const hoverX = hoveredBoardCell.x;
+            const hoverY = hoveredBoardCell.y;
+            const hasPlacedTile = sampleTiles.has(`${hoverX},${hoverY}`);
+
+            if (hasPlacedTile) {
+              drawHoverGlowRect(
+                BOARD_ORIGIN_X + hoverX * BOARD_TILE_SIZE + 2,
+                BOARD_ORIGIN_Y + hoverY * BOARD_TILE_SIZE + 2,
+                BOARD_TILE_SIZE - 4,
+                BOARD_TILE_SIZE - 4,
+                3
+              );
+            } else {
+              drawHoverGlowRect(
+                BOARD_ORIGIN_X + hoverX * BOARD_TILE_SIZE + 1,
+                BOARD_ORIGIN_Y + hoverY * BOARD_TILE_SIZE + 1,
+                BOARD_TILE_SIZE - 2,
+                BOARD_TILE_SIZE - 2,
+                2
+              );
+            }
+          }
+
+          drawRack();
+        }
+
+        function drawRack() {
+          for (let index = 0; index < 7; index += 1) {
+            const x = RACK_ORIGIN_X + index * (RACK_SLOT_SIZE + RACK_SLOT_GAP);
+            const y = RACK_ORIGIN_Y;
+
+            ctx.fillStyle = "#f9f4ea";
+            ctx.strokeStyle = "#9e8b70";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            roundRectPath(x, y, RACK_SLOT_SIZE, RACK_SLOT_SIZE, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            const letter = demoRack[index];
+            const selectedForExchange = exchangeMode && exchangeSelection.has(index);
+
+            if (letter) {
+              drawTile(
+                x + 4,
+                y + 4,
+                RACK_SLOT_SIZE - 8,
+                {
+                  letter,
+                  points: LETTER_VALUES[letter] ?? 0
+                },
+                {
+                  accent: selectedForExchange,
+                  tint: selectedForExchange ? "#f4d4d0" : "#f9e2b8",
+                  letterFontSize: 32,
+                  pointsFontSize: 14
+                }
+              );
+            }
+
+            if (hoveredRackIndex === index) {
+              if (letter) {
+                drawHoverGlowRect(x + 4, y + 4, RACK_SLOT_SIZE - 8, RACK_SLOT_SIZE - 8, 3);
+              } else {
+                drawHoverGlowRect(x + 1, y + 1, RACK_SLOT_SIZE - 2, RACK_SLOT_SIZE - 2, 8);
+              }
+            }
+          }
+        }
+
+        function renderWordList() {
+          historyLog.innerHTML = "";
+          for (const item of words) {
+            const line = document.createElement("div");
+            const direction = item.dx === 1 ? "across" : "down";
+            line.textContent = `${item.word} (${direction}) at ${item.x},${item.y}`;
+            historyLog.appendChild(line);
+          }
+        }
+
+        function updateSubmitLabel() {
+          if (exchangeMode) {
+            submitMoveBtn.textContent =
+              exchangeSelection.size > 0 ? "Confirm Exchange" : "Select letters for exchange";
+          } else {
+            submitMoveBtn.textContent = "Submit Word";
+          }
+        }
+
+        const sampleTiles = buildSampleTiles();
+        drawBoard(sampleTiles);
+        renderWordList();
+        updateSubmitLabel();
+
+        canvas.addEventListener("click", (event) => {
+          if (!exchangeMode) {
+            return;
+          }
+
+          const point = getCanvasPoint(event);
+          const rackIndex = findRackIndex(point.x, point.y);
+          if (rackIndex < 0 || !demoRack[rackIndex]) {
+            return;
+          }
+
+          if (exchangeSelection.has(rackIndex)) {
+            exchangeSelection.delete(rackIndex);
+          } else {
+            exchangeSelection.add(rackIndex);
+          }
+
+          updateSubmitLabel();
+          drawBoard(sampleTiles);
+        });
+
+        canvas.addEventListener("mousemove", (event) => {
+          const point = getCanvasPoint(event);
+          const nextRackIndex = findRackIndex(point.x, point.y);
+          const nextBoardCell = nextRackIndex >= 0 ? null : findBoardCell(point.x, point.y);
+
+          const rackChanged = nextRackIndex !== hoveredRackIndex;
+          const boardChanged =
+            (nextBoardCell?.x ?? -1) !== (hoveredBoardCell?.x ?? -1) ||
+            (nextBoardCell?.y ?? -1) !== (hoveredBoardCell?.y ?? -1);
+
+          if (!rackChanged && !boardChanged) {
+            return;
+          }
+
+          hoveredRackIndex = nextRackIndex;
+          hoveredBoardCell = nextBoardCell;
+          drawBoard(sampleTiles);
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+          if (hoveredRackIndex === -1 && !hoveredBoardCell) {
+            return;
+          }
+
+          hoveredRackIndex = -1;
+          hoveredBoardCell = null;
+          drawBoard(sampleTiles);
+        });
+
+        shuffleRackBtn.addEventListener("click", () => {
+          if (exchangeMode) {
+            return;
+          }
+
+          for (let i = demoRack.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [demoRack[i], demoRack[j]] = [demoRack[j], demoRack[i]];
+          }
+
+          drawBoard(sampleTiles);
+        });
+
+        exchangeRackBtn.addEventListener("click", () => {
+          exchangeMode = !exchangeMode;
+
+          if (!exchangeMode) {
+            exchangeSelection.clear();
+          }
+
+          exchangeRackBtn.classList.toggle("active", exchangeMode);
+          updateSubmitLabel();
+          drawBoard(sampleTiles);
+        });
+
+        submitMoveBtn.addEventListener("click", () => {
+          if (!exchangeMode || exchangeSelection.size === 0) {
+            return;
+          }
+
+          exchangeSelection.clear();
+          exchangeMode = false;
+          exchangeRackBtn.classList.remove("active");
+          updateSubmitLabel();
+          drawBoard(sampleTiles);
+        });
+
+        window.addEventListener("keydown", (event) => {
+          if (event.key.toLowerCase() === "r") {
+            drawBoard(sampleTiles);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

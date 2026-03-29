@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scrabs</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="lobbyCard" class="card">
+        <h1>Scrabs</h1>
+        <p class="subtitle">Enter your name, then host a game or join with a code.</p>
+
+        <label class="field">
+          <span>Name</span>
+          <input id="nameInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Player name" />
+        </label>
+
+        <div class="lobby-actions">
+          <button id="hostBtn" class="primary">Host</button>
+          <input id="joinCodeInput" type="text" maxlength="6" placeholder="Game code" />
+          <button id="joinBtn">Join</button>
+        </div>
+
+        <p id="lobbyError" class="error"></p>
+      </section>
+
+      <section id="gameView" class="hidden">
+        <div class="game-layout">
+          <canvas id="boardCanvas" width="620" height="708"></canvas>
+          <div class="rack-submit">
+            <button
+              id="shuffleRackBtn"
+              class="rack-icon-btn"
+              type="button"
+              aria-label="Shuffle rack"
+              title="Shuffle rack"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M16 4h4v4" />
+                <path d="M4 18h2c2.6 0 4.2-.9 5.8-3L20 4" />
+                <path d="M16 20h4v-4" />
+                <path d="M4 6h2c2.6 0 4.2.9 5.8 3L20 20" />
+              </svg>
+            </button>
+            <button
+              id="exchangeRackBtn"
+              class="rack-icon-btn"
+              type="button"
+              aria-label="Exchange mode"
+              title="Exchange mode"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 8h11" />
+                <path d="M13 4l4 4-4 4" />
+                <path d="M19 16H8" />
+                <path d="M11 12l-4 4 4 4" />
+              </svg>
+            </button>
+            <button id="submitMoveBtn" class="primary">Submit Word</button>
+          </div>
+
+          <aside class="side-panel card">
+            <section>
+              <div id="playersList" class="players-list"></div>
+            </section>
+
+            <section class="game-meta">
+              <div class="game-meta-row">
+                <strong>Code:</strong>
+                <span id="gameCodeLabel">-</span>
+                <button id="copyCodeBtn" class="small" type="button">Copy</button>
+              </div>
+              <div class="status-row">
+                <span>Status:</span>
+                <span id="statusLabel" class="status">Connecting...</span>
+              </div>
+            </section>
+
+            <section>
+              <h2>History</h2>
+              <div id="historyLog" class="history-log"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
