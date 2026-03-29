@@ -52,8 +52,8 @@ function sanitizeName(value) {
 
 function sanitizeCode(value) {
   const normalized = String(value ?? "").trim().toUpperCase();
-  if (!/^[A-Z0-9]{6}$/.test(normalized)) {
-    throw new GameRuleError("Game code must be 6 letters/numbers.", 400);
+  if (!/^[A-Z0-9]{4}$/.test(normalized)) {
+    throw new GameRuleError("Game code must be 4 letters/numbers.", 400);
   }
   return normalized;
 }

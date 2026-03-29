@@ -263,7 +263,7 @@ export function createPlayerKey() {
 
 export function generateGameCode(random = Math.random) {
   let code = "";
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     code += GAME_CODES[Math.floor(random() * GAME_CODES.length)];
   }
   return code;

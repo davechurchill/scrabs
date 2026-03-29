@@ -66,7 +66,7 @@ function normalizeName(name) {
 }
 
 function normalizeCode(code) {
-  return String(code ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  return String(code ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
 }
 
 function getSessionMap() {
@@ -366,8 +366,8 @@ async function joinGame() {
     return;
   }
 
-  if (code.length !== 6) {
-    showLobbyError("Enter a valid 6-character game code.");
+  if (code.length !== 4) {
+    showLobbyError("Enter a valid 4-character game code.");
     return;
   }
 
